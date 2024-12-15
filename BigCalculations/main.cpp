@@ -150,37 +150,57 @@ void handleFile(char* argv[]) {
 }
 
 void handleConsole() {
-    std::string line;
-
-    std::cout << "Enter first number: "
-
-    while (std::getline(std::cin, line)) {
-        if (line.empty()) break;
-
-        std::cout << "You've entered: " << line << std::endl;
-    }
+    throw NotImplementedException();
 }
 
 void handleArgs(char* argv[]) {
     throw NotImplementedException();
 }
 
-//void 
+class InputProcessor {
+public:
+    virtual BigInteger getNext() const = 0;
+};
 
-void processArguments(InputType type, int argc, char* argv[]) {
+class FromStreamProcessor : public InputProcessor {
+private:
+    std::istream& is;
+public:
+    FromStreamProcessor(std::istream& is_) : is(is_) { }
+
+    BigInteger getNext() const {
+        std::string line;
+        std::getline(is, line);
+        return BigInteger(line);
+    }
+};
+
+//class ArgsInputProcessor : public InputProcessor {
+//private:
+//    int argsRemain;
+//    char** argv;
+//public:
+//    ArgsInputProcessor(int argc_, char* argv_[]) : argv(argv_ + 2), argsRemain(argc_ - 2) {};
+//
+//    BigInteger getNext() const {
+//        if (i > argc) throw std::out_of_range("Not enough arguments");
+//        std::string line(argv[i]);
+//        i++;
+//    }
+//};
+
+InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
     switch (type) {
         case WithConsole:
-            handleConsole();
-            break;
-        case WithArgs:
-            handleArgs(argv);
-            break;
+            return new FromStreamProcessor(std::cin);
+        //case WithArgs:
+        //    handleArgs(argv);
+        //    break;
         case WithFile:
             handleFile(argv);
             break;
-        }
+    }
 }
-
 
 class Calculator {
     BigInteger result;
@@ -210,7 +230,6 @@ public:
         return result;
     }
 };
-
 
 int main(int argc, char* argv[]) {
     try {
