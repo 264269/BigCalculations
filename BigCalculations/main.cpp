@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstring>
+#include <fstream>
 
 class BigInteger {
     //размер разряда
@@ -145,35 +146,103 @@ public:
     NotImplementedException() : std::logic_error("Function not yet implemented") {};
 };
 
-void handleFile(char* argv[]) {
-    throw NotImplementedException();
-}
+class Calculator {
+    BigInteger result;
 
-void handleConsole() {
-    throw NotImplementedException();
-}
-
-void handleArgs(char* argv[]) {
-    throw NotImplementedException();
-}
-
-class InputProcessor {
 public:
-    virtual BigInteger getNext() const = 0;
-};
+    Calculator(BigInteger bigInt) {
+        result = bigInt;
+    }
 
-class FromStreamProcessor : public InputProcessor {
-private:
-    std::istream& is;
-public:
-    FromStreamProcessor(std::istream& is_) : is(is_) { }
+    void multiply(const BigInteger& bigInt) {
+        std::cout << result << " " << bigInt << std::endl;
+        result = result * bigInt;
+    }
 
-    BigInteger getNext() const {
-        std::string line;
-        std::getline(is, line);
-        return BigInteger(line);
+    void add(const BigInteger& bigInt) {
+        throw NotImplementedException();
+    }
+    void subtract(const BigInteger& bigInt) {
+        throw NotImplementedException();
+    }
+    void divide(const BigInteger& bigInt) {
+        throw NotImplementedException();
+    }
+
+    BigInteger getResult() {
+        std::cout << result << std::endl;
+        return result;
     }
 };
+
+
+BigInteger handleFile(int argc, char* argv[]) {
+    //throw NotImplementedException();
+    std::ifstream file(argv[2]);
+
+    std::string firstLine;
+    std::getline(file, firstLine);
+
+    std::string secondLine;
+    std::getline(file, secondLine);
+
+    file.close();
+
+    BigInteger x(firstLine);
+    BigInteger y(secondLine);
+
+    Calculator calc(x);
+    calc.multiply(y);
+    return calc.getResult();
+}
+
+BigInteger handleConsole() {
+    //throw NotImplementedException();
+    std::string firstLine;
+    std::cout << "Enter first number:" << std::endl;
+    std::getline(std::cin, firstLine);
+
+    std::string secondLine;
+    std::cout << "Enter second number:" << std::endl;
+    std::getline(std::cin, secondLine);
+
+    BigInteger x(firstLine);
+    BigInteger y(secondLine);
+
+    Calculator calc(x);
+    calc.multiply(y);
+    return calc.getResult();
+}
+
+BigInteger handleArgs(int argc, char* argv[]) {
+    std::string firstLine = argv[2];
+    std::string secondLine = argv[3];
+
+    BigInteger x(firstLine);
+    BigInteger y(secondLine);
+
+    Calculator calc(x);
+    calc.multiply(y);
+    return calc.getResult();
+}
+
+//class InputProcessor {
+//public:
+//    virtual BigInteger getNext() const = 0;
+//};
+//
+//class FromStreamProcessor : public InputProcessor {
+//private:
+//    std::istream& is;
+//public:
+//    FromStreamProcessor(std::istream& is_) : is(is_) { }
+//
+//    BigInteger getNext() const {
+//        std::string line;
+//        std::getline(is, line);
+//        return BigInteger(line);
+//    }
+//};
 
 //class ArgsInputProcessor : public InputProcessor {
 //private:
@@ -189,47 +258,35 @@ public:
 //    }
 //};
 
-InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
+//InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
+//    switch (type) {
+//        case WithConsole:
+//            return new FromStreamProcessor(std::cin);
+//        //case WithArgs:
+//        //    handleArgs(argv);
+//        //    break;
+//        case WithFile:
+//            handleFile(argv);
+//            break;
+//    }
+//}
+
+BigInteger processArguments(InputType type, int argc, char* argv[]) {
+    BigInteger result;
     switch (type) {
         case WithConsole:
-            return new FromStreamProcessor(std::cin);
-        //case WithArgs:
-        //    handleArgs(argv);
-        //    break;
+            result = handleConsole();
+            break;
         case WithFile:
-            handleFile(argv);
+            result = handleFile(argc, argv);
+            break;
+        case WithArgs:
+            result = handleArgs(argc, argv);
             break;
     }
+    return result;
 }
 
-class Calculator {
-    BigInteger result;
-
-public:
-    Calculator(BigInteger bigInt) {
-        result = bigInt;
-    }
-
-    void multiply(const BigInteger& bigInt) {
-        result = result * bigInt;
-    }
-
-    void add(const BigInteger& bigInt) {
-        throw NotImplementedException();
-    }
-
-    void subtract(const BigInteger& bigInt) {
-        throw NotImplementedException();
-    }
-
-    void divide(const BigInteger& bigInt) {
-        throw NotImplementedException();
-    }
-
-    BigInteger getResult() {
-        return result;
-    }
-};
 
 int main(int argc, char* argv[]) {
     try {
@@ -241,7 +298,7 @@ int main(int argc, char* argv[]) {
         //c = c * b;
         //std::cout << c << std::endl;
         //std::cout << calc.getResult() << std::endl;
-        processArguments(getInputType(argc, argv), argc, argv);
+        std::cout << processArguments(getInputType(argc, argv), argc, argv) << std::endl;
     }
     catch (std::exception err) {
         std::cerr << "Error: " << err.what() << std::endl;
