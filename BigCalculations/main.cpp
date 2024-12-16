@@ -94,26 +94,79 @@ public:
 };
 
 std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
+    std::string result;
     if (bigInt.digits.empty()) {
-        os << 0;
+        result = "0";
     }
     else {
+        //чтобы не придумывать своё форматирование, выведем  первый разряд в научном представлении
+        //а потом прибавим 9 * количество разрядов к степени
+        std::stringstream ss;
+
         if (bigInt.isNegative) {
-            os << '-';
-        }
-        os << bigInt.digits.back();
-
-        char old_fill = os.fill('0');
-
-        for (long long i = (bigInt.digits.size() - 2); i >= 0; --i) {
-            os << std::setw(9) << bigInt.digits[i];
+            ss << '-';
         }
 
-        os.fill(old_fill);
+        ss << std::scientific << std::setprecision(7);
+        
+        if (bigInt.digits.size() > 1) {
+            long long firstNumbers = 1LL * bigInt.digits.back() * bigInt.BASE;
+            long long secondDigit = bigInt.digits.size() - 2;
+            firstNumbers += bigInt.digits[secondDigit];
+            double firstNumbersDouble = static_cast<double>(firstNumbers);
+            ss << firstNumbersDouble;
+
+            result = ss.str();
+
+            size_t ePos = result.find_first_of("eE");
+
+            std::string eStr = result.substr(ePos + 1);
+
+            int e = std::stoll(eStr);
+
+            long long digitsSize = bigInt.digits.size() - 2;
+            digitsSize = digitsSize > 0 ? digitsSize : 0;
+            e += digitsSize * 9;
+
+            std::string eNew = std::to_string(e);
+
+            result.replace(ePos + 2, eStr.length(), eNew);
+        }
+        else {
+            ss << bigInt.digits.back();
+            result = ss.str();
+        }
     }
+
+    os << result;
 
     return os;
 }
+
+//std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
+//    //os << bigInt
+//    if (bigInt.digits.empty()) {
+//        os << 0;
+//    }
+//    else {
+//        if (bigInt.isNegative) {
+//            os << '-';
+//        }
+//        os << bigInt.digits.back();
+//
+//        
+//
+//        char old_fill = os.fill('0');
+//
+//        for (long long i = bigInt.digits.size() - 2; i >= 0; --i) {
+//            os << std::setw(9) << bigInt.digits[i];
+//        }
+//
+//        os.fill(old_fill);
+//    }
+//
+//    return os;
+//}
 
 enum InputType {
     WithFile,
@@ -155,7 +208,6 @@ public:
     }
 
     void multiply(const BigInteger& bigInt) {
-        std::cout << result << " " << bigInt << std::endl;
         result = result * bigInt;
     }
 
@@ -170,7 +222,6 @@ public:
     }
 
     BigInteger getResult() {
-        std::cout << result << std::endl;
         return result;
     }
 };
