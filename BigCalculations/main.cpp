@@ -327,6 +327,8 @@ InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
             return new FromFileProcessor(argv[2]);
         case InputType::WithArgs:
             return new FromArgsProcessor(argv);
+        default:
+            throw std::runtime_error("Couldn't find InputProcessor for chosen input type");
     }
 }
 
@@ -356,7 +358,7 @@ int main(int argc, char* argv[]) {
         calc.multiply(y);
         std::cout << "Result of multiplying " << x << " and " << y << " is " << calc.getResult() << std::endl;
     }
-    catch (std::exception err) {
+    catch (std::exception& err) {
         std::cerr << "Error: " << err.what() << std::endl;
     }
 
