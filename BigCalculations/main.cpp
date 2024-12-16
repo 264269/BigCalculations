@@ -7,17 +7,17 @@
 #include <fstream>
 
 class BigInteger {
-    //размер разряда
+    //digit size
     static const int BASE_POW = 9;
     static const int BASE = 1e9;
 
-    //разряды
+    //digits
     std::vector<int> digits;
 
-    //флаг отрицательности
+    //negativity flag
     bool isNegative;
 
-    //удаление лидирующих нулей
+    //removing leading zeros (was in the algorithm but it feels like not necessary)
     void removeLeadingZeros() {
         while (digits.size() > 1 && digits.back() == 0) {
             digits.pop_back();
@@ -25,22 +25,23 @@ class BigInteger {
     }
 
 public:
-    //базовый конструктор
+    //base constructor
     BigInteger() {
         isNegative = false;
     }
 
-    //конструктор из строки
+    //constructor from str
     BigInteger(std::string str) {        
-        if (str.length() == 0) { //если строка пустая, то пустой вектор
+        if (str.length() == 0 || (str.length() == 1 && str[0] == '-')) { //if line empty then empty vector
             isNegative = false;
+            return;
         }
-        else { //иначе разбираем строку на разряды
+        else { //else split str by digits
 
             isNegative = (str[0] == '-'); //проверка на отрицательное число
             if (isNegative) str = str.substr(1);
 
-            for (long long i = str.length(); i > 0; i -= BASE_POW) { //заполнение разрядов с конца
+            for (long long i = str.length(); i > 0; i -= BASE_POW) { //fill from the end
                 
                 std::string stringDigit = i < BASE_POW 
                     ? str.substr(0, i) 
@@ -51,19 +52,18 @@ public:
                 digits.push_back(convertedDigit);
             }
 
-            //удаление ведущих нулей
             removeLeadingZeros();
         }
     }
 
     const BigInteger operator *(const BigInteger& right) {
-        //результат
+        //result
         BigInteger result;
         result.digits.resize(digits.size() + right.digits.size());
 
-        //перемножение
+        //multiplying
         for (size_t i = 0; i < digits.size(); ++i) {
-            int carry = 0; //переполнение разряда
+            int carry = 0; //overflow
             for (size_t j = 0; j < right.digits.size() || carry != 0; ++j) {
                 int leftDigit = digits[i];
                 int rightDigit = j < right.digits.size() ? right.digits[j] : 0;
@@ -76,9 +76,9 @@ public:
             }
         }
 
-        //знак
+        //neg.flag
         result.isNegative = isNegative != right.isNegative;
-        //удаление лидирующих нулей
+
         result.removeLeadingZeros();
         
         return result;
@@ -99,16 +99,16 @@ std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
         result = "0";
     }
     else {
-        //чтобы не придумывать своё форматирование, выведем  первый разряд в научном представлении
-        //а потом прибавим 9 * количество разрядов к степени
+        //to avoid velosipeding, use std::scientific, write it to stringstream, modify exp as digits.size * BASE_POW
         std::stringstream ss;
 
         if (bigInt.isNegative) {
             ss << '-';
         }
 
-        ss << std::scientific << std::setprecision(7);
+        ss << std::scientific << std::setprecision(9);
         
+        //scientific form if number is greater than 1e9
         if (bigInt.digits.size() > 1) {
             long long firstNumbers = 1LL * bigInt.digits.back() * bigInt.BASE;
             long long secondDigit = bigInt.digits.size() - 2;
@@ -126,7 +126,7 @@ std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
 
             long long digitsSize = bigInt.digits.size() - 2;
             digitsSize = digitsSize > 0 ? digitsSize : 0;
-            e += digitsSize * 9;
+            e += digitsSize * bigInt.BASE_POW;
 
             std::string eNew = std::to_string(e);
 
@@ -142,31 +142,6 @@ std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
 
     return os;
 }
-
-//std::ostream& operator <<(std::ostream& os, const BigInteger& bigInt) {
-//    //os << bigInt
-//    if (bigInt.digits.empty()) {
-//        os << 0;
-//    }
-//    else {
-//        if (bigInt.isNegative) {
-//            os << '-';
-//        }
-//        os << bigInt.digits.back();
-//
-//        
-//
-//        char old_fill = os.fill('0');
-//
-//        for (long long i = bigInt.digits.size() - 2; i >= 0; --i) {
-//            os << std::setw(9) << bigInt.digits[i];
-//        }
-//
-//        os.fill(old_fill);
-//    }
-//
-//    return os;
-//}
 
 enum InputType {
     WithFile,
@@ -210,7 +185,8 @@ public:
     void multiply(const BigInteger& bigInt) {
         result = result * bigInt;
     }
-
+    
+    //TODO
     void add(const BigInteger& bigInt) {
         throw NotImplementedException();
     }
@@ -226,130 +202,159 @@ public:
     }
 };
 
-
-BigInteger handleFile(int argc, char* argv[]) {
-    //throw NotImplementedException();
-    std::ifstream file(argv[2]);
-
-    std::string firstLine;
-    std::getline(file, firstLine);
-
-    std::string secondLine;
-    std::getline(file, secondLine);
-
-    file.close();
-
-    BigInteger x(firstLine);
-    BigInteger y(secondLine);
-
-    Calculator calc(x);
-    calc.multiply(y);
-    return calc.getResult();
-}
-
-BigInteger handleConsole() {
-    //throw NotImplementedException();
-    std::string firstLine;
-    std::cout << "Enter first number:" << std::endl;
-    std::getline(std::cin, firstLine);
-
-    std::string secondLine;
-    std::cout << "Enter second number:" << std::endl;
-    std::getline(std::cin, secondLine);
-
-    BigInteger x(firstLine);
-    BigInteger y(secondLine);
-
-    Calculator calc(x);
-    calc.multiply(y);
-    return calc.getResult();
-}
-
-BigInteger handleArgs(int argc, char* argv[]) {
-    std::string firstLine = argv[2];
-    std::string secondLine = argv[3];
-
-    BigInteger x(firstLine);
-    BigInteger y(secondLine);
-
-    Calculator calc(x);
-    calc.multiply(y);
-    return calc.getResult();
-}
-
-//class InputProcessor {
-//public:
-//    virtual BigInteger getNext() const = 0;
-//};
+//BigInteger handleFile(int argc, char* argv[]) {
+//    //throw NotImplementedException();
+//    std::ifstream file(argv[2]);
 //
-//class FromStreamProcessor : public InputProcessor {
-//private:
-//    std::istream& is;
-//public:
-//    FromStreamProcessor(std::istream& is_) : is(is_) { }
+//    std::string firstLine;
+//    std::getline(file, firstLine);
 //
-//    BigInteger getNext() const {
-//        std::string line;
-//        std::getline(is, line);
-//        return BigInteger(line);
-//    }
-//};
-
-//class ArgsInputProcessor : public InputProcessor {
-//private:
-//    int argsRemain;
-//    char** argv;
-//public:
-//    ArgsInputProcessor(int argc_, char* argv_[]) : argv(argv_ + 2), argsRemain(argc_ - 2) {};
+//    std::string secondLine;
+//    std::getline(file, secondLine);
 //
-//    BigInteger getNext() const {
-//        if (i > argc) throw std::out_of_range("Not enough arguments");
-//        std::string line(argv[i]);
-//        i++;
-//    }
-//};
-
-//InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
-//    switch (type) {
-//        case WithConsole:
-//            return new FromStreamProcessor(std::cin);
-//        //case WithArgs:
-//        //    handleArgs(argv);
-//        //    break;
-//        case WithFile:
-//            handleFile(argv);
-//            break;
-//    }
+//    file.close();
+//
+//    BigInteger x(firstLine);
+//    BigInteger y(secondLine);
+//
+//    Calculator calc(x);
+//    calc.multiply(y);
+//    return calc.getResult();
+//}
+//
+//BigInteger handleConsole() {
+//    //throw NotImplementedException();
+//    std::string firstLine;
+//    std::cout << "Enter first number:" << std::endl;
+//    std::getline(std::cin, firstLine);
+//
+//    std::string secondLine;
+//    std::cout << "Enter second number:" << std::endl;
+//    std::getline(std::cin, secondLine);
+//
+//    BigInteger x(firstLine);
+//    BigInteger y(secondLine);
+//
+//    Calculator calc(x);
+//    calc.multiply(y);
+//    return calc.getResult();
+//}
+//
+//BigInteger handleArgs(int argc, char* argv[]) {
+//    std::string firstLine = argv[2];
+//    std::string secondLine = argv[3];
+//
+//    BigInteger x(firstLine);
+//    BigInteger y(secondLine);
+//
+//    Calculator calc(x);
+//    calc.multiply(y);
+//    return calc.getResult();
 //}
 
-BigInteger processArguments(InputType type, int argc, char* argv[]) {
-    BigInteger result;
-    switch (type) {
-        case WithConsole:
-            result = handleConsole();
-            break;
-        case WithFile:
-            result = handleFile(argc, argv);
-            break;
-        case WithArgs:
-            result = handleArgs(argc, argv);
-            break;
+class InputProcessor {
+public:
+    virtual ~InputProcessor() {};
+    virtual BigInteger getNext() = 0;
+};
+
+class FromConsoleProcessor : public InputProcessor {
+public:
+    BigInteger getNext() {
+        std::cout << "Enter your number: " << std::endl;
+        std::string line;
+        if (std::getline(std::cin, line)) {
+            return BigInteger(line);
+        }
+        else {
+            throw std::invalid_argument("Can't read line from console.");
+        }
     }
-    return result;
+};
+
+class FromFileProcessor : public InputProcessor {
+private:
+    std::ifstream file;
+public:
+    FromFileProcessor(std::string fileName) {
+        file.open(fileName);
+        if (!file.is_open()) {
+            throw std::runtime_error("Can't open file.");
+        }
+    };
+
+    ~FromFileProcessor() {
+        if (file.is_open()) {
+            file.close();
+        }
+    }
+
+    BigInteger getNext() {
+        std::string line;
+        if (std::getline(file, line)) {
+            return BigInteger(line);
+
+        }
+        else {
+            throw std::invalid_argument("Can't read line from file.");
+        }
+    }
+};
+
+class FromArgsProcessor : public InputProcessor {
+private:
+    char** argv;
+    int i = 2;
+public:
+    FromArgsProcessor(char* argv_[]) : argv(argv_) {};
+
+    BigInteger getNext() {
+        if (argv[i]) {
+            char* str = argv[i++];
+            return BigInteger(str);
+        }
+        else {
+            throw std::invalid_argument("No more args left");
+        }
+    }
+};
+
+InputProcessor* getInputProcessor(InputType type, int argc, char* argv[]) {
+    switch (type) {
+        case InputType::WithConsole:
+            return new FromConsoleProcessor();
+        case InputType::WithFile:
+            return new FromFileProcessor(argv[2]);
+        case InputType::WithArgs:
+            return new FromArgsProcessor(argv);
+    }
 }
 
+//BigInteger processArguments(InputType type, int argc, char* argv[]) {
+//    BigInteger result;
+//    switch (type) {
+//        case WithConsole:
+//            result = handleConsole();
+//            break;
+//        case WithFile:
+//            result = handleFile(argc, argv);
+//            break;
+//        case WithArgs:
+//            result = handleArgs(argc, argv);
+//            break;
+//    }
+//    return result;
+//}
 
 int main(int argc, char* argv[]) {
     try {
-        //BigInteger a("1234567890123456789012345678901234567890");
-        //BigInteger b("2345678901234567890123456789012345678901");
-        //Calculator calc(a);
-        //calc.multiply(b);
-        //BigInteger c = calc.getResult();
-        //c = c * b;
-        //std::cout << c << std::endl;
-        //std::cout << calc.getResult() << std::endl;
-        std::cout << processArguments(getInputType(argc, argv), argc, argv) << std::endl;
+        //std::cout << processArguments(getInputType(argc, argv), argc, argv) << std::endl;
+        InputProcessor* inputProcessor = getInputProcessor(getInputType(argc, argv), argc, argv);
+        BigInteger x = inputProcessor->getNext();
+        BigInteger y = inputProcessor->getNext();
+        Calculator calc(x);
+        calc.multiply(y);
+        std::cout << "Result of multiplying " << x << " and " << y << " is " << calc.getResult() << std::endl;
     }
     catch (std::exception err) {
         std::cerr << "Error: " << err.what() << std::endl;
